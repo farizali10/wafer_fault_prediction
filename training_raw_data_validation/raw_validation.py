@@ -1,5 +1,6 @@
 import json
 from application_logging.logger import App_Logger
+import os
 
 class Raw_data_validation:
     """
@@ -76,3 +77,20 @@ class Raw_data_validation:
         Version: 1.0
         Revisions: None
         """
+        regex = "['wafer']+['\_'']+[\d_]+[\d]+\.csv"
+        return regex
+
+    def create_directory_for_good_bad_raw_data(self):
+        try:
+            path = os.path.join("training_raw_files_validated/","good_raw/")
+            if not os.path.isdir(path):
+                os.makedirs(path)
+            path = os.path.join("training_raw_files_validated/", "bad_raw/")
+            if not os.path.isdir(path):
+                os.makedirs(path)
+
+        except OSError as ex:
+            file = open("training_logs/general_log.txt","a+")
+            self.logger.log(file,"Error while creating directory %s:" %ex)
+            file.close()
+            raise OSError
