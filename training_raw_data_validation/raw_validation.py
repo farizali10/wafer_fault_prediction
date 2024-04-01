@@ -1,6 +1,8 @@
 import json
 from application_logging.logger import App_Logger
 import os
+import datetime
+import shutil
 
 class Raw_data_validation:
     """
@@ -94,3 +96,129 @@ class Raw_data_validation:
             self.logger.log(file,"Error while creating directory %s:" %ex)
             file.close()
             raise OSError
+        
+    def delete_existing_good_data_training_folder(self):
+        """
+        Method Name: delete_existing_good_data_training_folder
+        Description: This method deletes the directory made to store the Good Data
+                     after loading the data in the table. Once the good files are
+                     loaded in the DB, deleting the directory ensures space optimization.
+        Ouput: None
+        On Failure: OS Error
+
+        Written By: Fariz Ali
+        Version: 1.0
+        Revisions: None
+        """
+
+        try:
+            path = 'training_raw_files_validated/'
+            if os.path.isdir(path + "good_raw/"):
+                shutil.rmtree(path + "good_raw/")
+                file = open("training_logs/general_log.txt","a+")
+                self.logger.log(file,"Good Raw directory deleted successfully")
+                file.close()
+        except OSError as s:
+            file = open("training_logs/general_log.txt","a+")
+            self.logger.log(file,"Error while deleting directory: %s" %s)
+            file.close()
+            raise OSError
+        
+    def delete_existing_bad_data_training_folder(self):
+        """
+        Method Name: delete_existing_bad_data_training_folder
+        Description: This method deletes the directory made to store the bad data
+
+        Ouput: None
+        On Failure: OS Error
+
+        Written By: Fariz Ali
+        Version: 1.0
+        Revisions: None
+        """
+
+        try:
+            path = 'training_raw_files_validated/'
+            if os.path.isdir(path + "bad_raw/"):
+                shutil.rmtree(path + "bad_raw/")
+                file = open("training_logs/general_log.txt","a+")
+                self.logger.log(file,"Bad Raw directory deleted successfully")
+                file.close()
+        except OSError as s:
+            file = open("training_logs/general_log.txt","a+")
+            self.logger.log(file,"Error while deleting directory: %s" %s)
+            file.close()
+            raise OSError
+    
+    def move_bad_files_to_archived(self):
+        """
+        Method Name: move_bad_files_to_archived
+        Description: This method deletes the directory made to store the bad data after moving the data in an archive folder. 
+                     We archive the bad files to send them back to the client for invalid data isuse.
+        
+        Output: None
+        On Failure: OS Error
+
+        Written By: Fariz Ali
+        Version: 1.0
+        Revisions: None
+        """
+
+        now = datetime.now()
+        date = now.date()
+        time = now.strftime("%H%M%S")
+
+        try:
+            source = 'training_raw_files_validated/bad_raw/'
+            if os.path.isdir(source):
+                path = "training_archive_bad_data"
+                
+                if not os.path.isdir(path):
+                    os.makedirs(path)
+                
+                dest = "training_archive_bad_data/bad_data_" + str(date) + "_" + str(time)
+                if not os.path.isdir(dest):
+                    os.makedirs(dest)
+                
+                files = os.listdir(source)
+                for f in files:
+                    if f not in os.listdir(dest):
+                        shutil.move(source+f,dest)
+
+                file = open("training_logs/general_log.txt","a+")
+                self.logger.log(file,"Bad files moved to archive")
+                
+                path = 'training_raw_files_validated/'
+                if os.path.isdir(path + 'bad_raw/'):
+                    shutil.rmtree(path+"bad_raw/")
+                self.logger.log(file,"Bad Raw Data folder deleted successfully!")
+                file.close()
+        
+        except Exception as e:
+            file = open("training_logs/general_log.txt","a+")
+            self.logger.log(file,"Error while moving bad files to archive:: %s" %e)
+            file.close()
+            raise e
+        
+    def validation_file_name_raw(self,regex,length_of_date_stamp_in_file,length_of_time_stamp_in_file):
+        """
+        Method Name: validation_file_name_raw
+        Description: This function validates the name of the training csv files as per given name in the schema.
+                     Regex pattern is used to do the validation. If name format do not match the file is moved to bad raw data folder else in good raw data.
+        Output: None
+        On Failure: Exception
+
+        Written By: Fariz Ali
+        Version: 1.0
+        Revisions: None
+        """
+
+        # Delete the directories for good and bad data in case last run was unsuccessfull and folders were not deleted.
+        self.delete_existing_bad_data_training_folder()
+        self.delete_existing_good_data_training_folder()
+
+        # Create new directories
+        self.create_directory_for_good_bad_raw_data()
+        onlyfiles = [for f in listdir(self.batch_directory)]
+
+
